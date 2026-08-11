@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [dev, master]
+  pull_request:
+    branches: [dev, master]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: tests (${{ matrix.os }}, py${{ matrix.python }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install core deps (no Qt)
+        run: pip install -r requirements-core.txt
+
+      - name: Pure-core tests
+        run: |
+          python tests/test_adc.py
+          python tests/test_tracker.py
+          python tests/test_config_ux.py
+          python tests/test_updates.py
+
+      - name: adc/ must stay Qt-free
+        run: >
+          python -c "import adc, adc.config, adc.connection, adc.updates,
+          adc.announce, adc.tracker, adc.complete, adc.migrate, sys;
+          assert 'PySide6' not in sys.modules, 'adc/ pulled in PySide6 - the CLI must not need Qt'"
+
+      - name: Byte-compile GUI + CLI
+        run: python -m py_compile main.py herald_cli.py
+
+  gui-tests:
+    name: gui-tests (offscreen)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # PySide6's offscreen platform plugin needs the EGL/xkb runtime libs.
+      - name: System libs for headless Qt
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon0 libgl1 libglib2.0-0
+      - name: Install GUI deps
+        run: pip install -r requirements.txt
+      - name: Offscreen GUI tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: python tests/test_gui_ux.py

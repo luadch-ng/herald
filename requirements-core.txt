@@ -1,0 +1,10 @@
+# Herald CORE (headless) dependencies - what herald_cli.py needs.
+# The ADC engine is pure Python; the only dependency here is optional.
+#
+# Install this on a headless server (no GUI):
+#     pip install -r requirements-core.txt
+#
+# Optional: file-system events that wake the release poll for near-live
+# latency (inotify on Linux). Herald degrades to plain polling without it,
+# so it is safe to drop on a minimal box.
+watchdog>=4.0

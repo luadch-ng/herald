@@ -1,0 +1,40 @@
+# build / packaging output
+build/
+dist/
+release/
+*.spec.bak
+build_pyinstaller.log
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# virtualenvs
+.venv/
+venv/
+env/
+
+# runtime state + operator data (created next to the app; may hold hub
+# passwords, keyprints and bot identities - NEVER commit this)
+data/
+*.log
+
+# editor / OS / tooling
+.claude/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# local-only dev aids - kept locally, not published yet (public CHANGELOG and
+# these tools land with the first public 1.0). Also excluded from the source
+# zip in packaging/build_release.py (SKIP_FILES).
+/cli_login.py
+/tools/fake_releases.py
+/packaging/NOTES.md

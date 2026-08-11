@@ -1,0 +1,25 @@
+# Herald headless runner (CLI). Configure your hubs + rules in the GUI first,
+# then drop the resulting data/ (hubs.json etc.) into ./herald-data and:
+#
+#     docker compose up -d
+#     docker compose logs -f
+#
+# In the GUI: Settings -> Target runtime OS = Linux, and enter each rule's watch
+# path as it is INSIDE the container (e.g. /releases/Movies), matching the
+# mounts below.
+
+services:
+  herald:
+    # Use the prebuilt image ...
+    image: ghcr.io/luadch-ng/herald:latest
+    # ... or build locally instead:
+    # build: .
+    container_name: herald
+    restart: unless-stopped
+    volumes:
+      # operator config: hubs.json + settings.json + announced_*.txt
+      - ./herald-data:/app/data
+      # the release trees Herald watches (read-only is enough)
+      - /path/to/releases:/releases:ro
+    # The mounted ./herald-data must be writable by uid 1000 (the image user):
+    #     mkdir -p herald-data && sudo chown -R 1000:1000 herald-data

@@ -1,0 +1,38 @@
+# Keep the CLI image lean: only adc/ + herald_cli.py + requirements-core.txt are
+# COPYed in the Dockerfile; everything else is noise.
+.git/
+.github/
+build/
+dist/
+release/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# GUI-only - not used by the headless runner
+main.py
+ui/
+assets/
+packaging/
+Herald.spec
+
+# local-only dev aids (also gitignored) - never in the image
+cli_login.py
+tools/
+
+# operator data + secrets - never bake into an image
+data/
+*.log
+
+# docs / meta
+README.md
+CLAUDE.md
+CONTRIBUTING.md
+LICENSE
+docker-compose.yml
+deploy/
+tests/

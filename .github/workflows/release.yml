@@ -1,0 +1,84 @@
+name: Release
+
+# Tag a release on master (e.g. v1.0) to build the GUI zips, publish a GitHub
+# Release with them as assets (which is what the in-app update check reports),
+# and push the CLI Docker image to GHCR.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write     # create the GitHub Release
+  packages: write     # push to ghcr.io
+
+jobs:
+  build-windows:
+    name: Build Windows + source zips
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tag must match adc.__version__
+        shell: bash
+        run: |
+          ver=$(python -c "import re;print(re.search(r'__version__ = \"([^\"]+)\"', open('adc/__init__.py',encoding='utf-8').read()).group(1))")
+          tag="${GITHUB_REF_NAME#v}"
+          echo "tag=$tag  __version__=$ver"
+          test "$tag" = "$ver" || { echo "::error::tag v$tag does not match adc.__version__ $ver - bump adc/__init__.py"; exit 1; }
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller packaging
+
+      - name: Build release zips
+        run: python packaging/build_release.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: herald-zips
+          path: release/*.zip
+
+  release:
+    name: Publish GitHub Release
+    needs: build-windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: herald-zips
+          path: release
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.zip
+          generate_release_notes: true
+
+  docker:
+    name: Push CLI image to GHCR
+    needs: build-windows     # a tag that mismatches __version__ blocks the image too
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Derive version tag
+        id: v
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/luadch-ng/herald:latest
+            ghcr.io/luadch-ng/herald:${{ steps.v.outputs.version }}

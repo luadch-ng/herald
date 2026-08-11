@@ -1,0 +1,13 @@
+# Herald FULL (GUI) dependencies. Use this on your desktop to run the GUI:
+#     pip install -r requirements.txt
+#
+# For a headless server (herald_cli.py only) use requirements-core.txt instead
+# - it does NOT pull in Qt/PySide6.
+-r requirements-core.txt
+
+# GUI toolkit. PySide6 also ships the Qt Designer launcher (pyside6-designer).
+PySide6>=6.6
+
+# Used by the About-box water easter egg (real-time ripple). GUI-only - the
+# headless runner does not need it. Herald degrades to a static logo without it.
+numpy>=1.24

@@ -1,0 +1,256 @@
+/* Herald theme skeleton. Colours are placeholder tokens substituted at load
+   time from the dark/light palette in main.py (load_stylesheet). Green/red stay
+   literal - they are semantic (Connect/Disconnect), identical in both themes. */
+
+QWidget {
+    background-color: __BG__;
+    color: __FG__;
+    font-family: "Segoe UI", "Inter", sans-serif;
+    font-size: 13px;
+}
+
+/* Labels never paint their own background - otherwise they inherit the
+   QWidget colour and show as a rectangle on the darker sidebar. The LED keeps
+   its colour via its own inline stylesheet. */
+QLabel { background: transparent; }
+
+#sidebar {
+    background-color: __PANEL__;
+    border-right: 1px solid __BORDER__;
+}
+
+#brand {
+    color: __FG_BRIGHT__;
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: 3px;
+}
+
+#sidebarCaption {
+    color: __FG_MUTED__;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-top: 6px;
+}
+
+QListWidget {
+    background-color: __PANEL__;
+    border: none;
+    outline: 0;
+}
+
+QListWidget::item {
+    padding: 9px 10px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+}
+
+QListWidget::item:selected {
+    background-color: __SEL_BG__;
+    color: __SEL_FG__;
+}
+
+QListWidget::item:hover {
+    background-color: __HOVER_BG__;
+}
+
+/* The release log renders each row as its own widget (label + folder button)
+   via setItemWidget; the default ::item vertical padding insets that widget and
+   clipped it to a few pixels (only half the row + a cut-off folder button
+   showed). Drop the padding here and let the row's own layout margins provide
+   the spacing, so the item sizeHint matches the widget's real height. The
+   inherited border-radius / margin-bottom still apply. (Sopor) */
+#releaseLog::item { padding: 0px; }
+
+#hubTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: __FG_BRIGHT__;
+}
+
+#statusDetail {
+    color: __FG_SECONDARY__;
+    font-size: 12px;
+}
+
+QPushButton {
+    background-color: __BTN_BG__;
+    border: 1px solid __BORDER3__;
+    border-radius: 6px;
+    padding: 7px 16px;
+    color: __BTN_FG__;
+}
+
+QPushButton:hover { background-color: __BTN_HOVER__; }
+QPushButton:pressed { background-color: __BTN_PRESSED__; }
+QPushButton:disabled { color: __DIS_FG__; background-color: __DIS_BG__; border-color: __DIS_BORDER__; }
+
+/* Connect = green, Disconnect = red - but only while ACTIVE (enabled). Disabled
+   they fall back to the neutral disabled style (visible grey, not black-on-dark)
+   so the live action is the one that lights up. */
+#btnConnect {
+    background-color: #16a34a;
+    border-color: #16a34a;
+    color: #ffffff;
+    font-weight: 600;
+}
+#btnConnect:hover { background-color: #22c55e; }
+#btnConnect:disabled { background-color: __DIS_BG__; border-color: __DIS_BORDER__; color: __DIS_FG__; }
+
+#btnDisconnect {
+    background-color: #dc2626;
+    border-color: #dc2626;
+    color: #ffffff;
+    font-weight: 600;
+}
+#btnDisconnect:hover { background-color: #ef4444; }
+#btnDisconnect:disabled { background-color: __DIS_BG__; border-color: __DIS_BORDER__; color: __DIS_FG__; }
+
+QPlainTextEdit {
+    background-color: __INPUT_BG__;
+    border: 1px solid __BORDER__;
+    border-radius: 8px;
+    padding: 8px;
+    color: __LOG_FG__;
+    font-family: "Cascadia Mono", "Consolas", monospace;
+    font-size: 12px;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 0;
+}
+QScrollBar::handle:vertical {
+    background: __SCROLL__;
+    border-radius: 5px;
+    min-height: 24px;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+
+/* Tabs (per-hub sub-menu) */
+QTabWidget::pane {
+    border: 1px solid __BORDER__;
+    border-radius: 8px;
+    top: -1px;
+}
+QTabBar::tab {
+    background: transparent;
+    color: __FG_SECONDARY__;
+    padding: 8px 16px;
+    margin-right: 2px;
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+QTabBar::tab:selected {
+    color: __FG_BRIGHT__;
+    border-bottom: 2px solid __ACCENT__;
+}
+QTabBar::tab:hover { color: __FG__; }
+
+/* Config form inputs */
+QLineEdit, QSpinBox {
+    background-color: __INPUT_BG__;
+    border: 1px solid __BORDER2__;
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: __BTN_FG__;
+    selection-background-color: __ACCENT__;
+}
+QLineEdit:focus, QSpinBox:focus { border-color: __ACCENT__; }
+QSpinBox::up-button, QSpinBox::down-button { width: 0; border: none; }
+
+/* Status-tab info labels */
+#lblSid, #lblKeyprint, #lblName, #lblHost, #lblPort, #lblNick,
+#lblPassword, #lblDescription, #lblKeyprintCfg {
+    color: __FG_MUTED__;
+}
+#infoKeyprint, #infoSid {
+    color: __FG__;
+    font-family: "Cascadia Mono", "Consolas", monospace;
+}
+#statusHeadline {
+    font-size: 15px;
+    color: __FG_BRIGHT__;
+}
+
+/* Section captions */
+#capConn, #capBot, #capFilters, #capCompletion, #sidebarCaption {
+    color: __FG_MUTED__;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
+
+QComboBox {
+    background-color: __INPUT_BG__;
+    border: 1px solid __BORDER2__;
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: __BTN_FG__;
+}
+QComboBox:focus { border-color: __ACCENT__; }
+QComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: center right;
+    width: 22px;
+    border-left: 1px solid __BORDER2__;
+}
+QComboBox::down-arrow {
+    image: url(__ASSETS__/down-arrow.svg);
+    width: 12px;
+    height: 12px;
+}
+QComboBox QAbstractItemView {
+    background-color: __BG__;
+    border: 1px solid __BORDER2__;
+    selection-background-color: __ACCENT__;
+    color: __BTN_FG__;
+    outline: 0;
+}
+
+/* Checkboxes */
+QCheckBox { color: __FG__; spacing: 8px; }
+QCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+    border: 1px solid __BORDER3__;
+    border-radius: 4px;
+    background: __INPUT_BG__;
+}
+QCheckBox::indicator:hover { border-color: __ACCENT__; }
+QCheckBox::indicator:checked {
+    background: __ACCENT__;
+    border-color: __ACCENT__;
+}
+
+/* Scroll area for the rule editor */
+QScrollArea { background: transparent; border: none; }
+#ruleEditor { background: transparent; }
+
+/* "Update available" indicator in the far-right menu-bar corner, shown only
+   when a newer release exists. Accent pill so it stands out from the chrome. */
+#updateCorner {
+    background: __ACCENT__;
+    color: __ACCENT_FG__;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 12px;
+    margin: 3px 8px 3px 0;
+    font-weight: 700;
+}
+#updateCorner:hover { background: __ACCENT_FG__; color: __ACCENT__; }
+
+/* Menu bar */
+QMenuBar { background: __PANEL__; color: __FG__; border-bottom: 1px solid __BORDER__; }
+QMenuBar::item { padding: 6px 12px; background: transparent; }
+QMenuBar::item:selected { background: __SEL_BG__; }
+QMenu { background: __BG__; color: __FG__; border: 1px solid __BORDER__; }
+QMenu::item { padding: 6px 22px; }
+QMenu::item:selected { background: __ACCENT__; color: __ACCENT_FG__; }
+/* Styling QMenu::item color overrides Qt's automatic disabled greying, so
+   restore it explicitly - otherwise locked actions look active. (Sopor) */
+QMenu::item:disabled { color: __DIS_FG__; }
+QMenu::item:selected:disabled { background: transparent; color: __DIS_FG__; }
+QMenu::separator { height: 1px; background: __BORDER__; margin: 4px 0; }

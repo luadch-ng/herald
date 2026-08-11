@@ -1,0 +1,9 @@
+# Normalise line endings: LF in the repo, LF on checkout everywhere. Prevents
+# CRLF churn between contributors on different OSes (Herald's CI runs on both
+# Linux and Windows).
+* text=auto eol=lf
+
+# Binary assets - git must never line-ending-touch these.
+*.png binary
+*.ico binary
+*.wav binary

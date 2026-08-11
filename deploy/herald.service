@@ -1,0 +1,36 @@
+# Example systemd unit for running Herald headless on a Linux server.
+#
+# 1. Copy Herald to /opt/herald (or adjust the paths below), including your
+#    data/ directory (hubs.json + announced_*.txt) that you configured with
+#    the GUI. In the GUI's Settings -> Target runtime OS choose "Linux" before
+#    entering the rules' watch paths as they are ON THIS SERVER.
+# 2. Create a venv with only the core deps (no GUI/Qt needed):
+#       python3 -m venv /opt/herald/.venv
+#       /opt/herald/.venv/bin/pip install -r /opt/herald/requirements-core.txt
+# 3. Verify the config + watch paths resolve here:
+#       /opt/herald/.venv/bin/python /opt/herald/herald_cli.py --check
+# 4. Install + start:
+#       sudo cp /opt/herald/deploy/herald.service /etc/systemd/system/
+#       sudo systemctl daemon-reload
+#       sudo systemctl enable --now herald
+#       journalctl -u herald -f
+
+[Unit]
+Description=Herald ADC announcer (headless)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=herald
+Group=herald
+WorkingDirectory=/opt/herald
+ExecStart=/opt/herald/.venv/bin/python /opt/herald/herald_cli.py
+Restart=on-failure
+RestartSec=10
+# SIGTERM triggers Herald's clean shutdown (disconnect every hub).
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
