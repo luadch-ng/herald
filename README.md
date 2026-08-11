@@ -22,6 +22,10 @@ One config, two front-ends: a **Qt GUI** for the desktop and a **headless CLI**
 (no Qt) for servers and Docker.
 
 
+<p align="center">
+  <img src="docs/screenshot.png" width="820" alt="Herald GUI - the Status tab with the live announce log">
+</p>
+
 ## Features
 
 - 📡 Multihub - announce to many hubs at once, each its own connection
