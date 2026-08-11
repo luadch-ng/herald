@@ -46,6 +46,10 @@ def _app():
 def _build(settings=None, hubs=None):
     """Construct a Herald window with fully controlled, disk-free config."""
     base = config.default_settings()
+    # Never spawn the background GitHub update-check QThread in an offscreen test:
+    # it would still be running at process exit and Qt aborts ("QThread destroyed
+    # while running", exit 134). Update-check logic is covered by test_updates.py.
+    base["check_updates"] = False
     if settings:
         base.update(settings)
     config.load_settings = lambda: dict(base)
