@@ -276,7 +276,7 @@ class Herald(QMainWindow):
         self.btn_save.clicked.connect(self._save_hub)
         self.btn_add_rule.clicked.connect(self._add_rule)
         self.btn_clone_rule.clicked.connect(self._clone_rule)
-        self.btn_del_rule.clicked.connect(self._del_rule)
+        self.btn_del_rule.clicked.connect(lambda: self._del_rule())
         self.btn_save_rule.clicked.connect(self._save_rule)
         self.btn_browse.clicked.connect(self._browse_path)
         # live-reflect the rule name / active state in the list as you type
@@ -1391,7 +1391,7 @@ class Herald(QMainWindow):
             menu.addSeparator()
             a_cl = menu.addAction("Clone", self._clone_rule)
             a_sep = menu.addAction("Add separator", lambda: self._add_separator(row))
-            a_del = menu.addAction("Delete", self._del_rule)
+            a_del = menu.addAction("Delete", lambda: self._del_rule())
         # order changes + clone/delete/add are edits -> locked while connected
         a_up.setEnabled(not connected and row > 0)
         a_dn.setEnabled(not connected and row < last)
