@@ -55,7 +55,7 @@ def default_rule(rulename=""):
         "daydir_prev_minutes": 0,
         "skip_hidden": True,
         # completion detection (see tracker.py / complete.py)
-        "settle_seconds": 5,          # quiet window before a non-SFV / size-stable release is "done"
+        "settle_seconds": 30,         # quiet window before a non-SFV / size-stable release is "done"
         "sfv_level": "size_stable",   # present | size_stable | crc
         "blacklist": ["(incomplete)", "(no-sfv)", "(nuked)"],
         "whitelist": [],

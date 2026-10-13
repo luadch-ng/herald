@@ -238,4 +238,10 @@ def main_():
 
 
 if __name__ == "__main__":
-    sys.exit(main_())
+    rc = main_()
+    sys.stdout.flush()
+    # PySide6/Qt can abort during interpreter-exit teardown (C++ QObject
+    # double-free) on some runners; the checks are already done, so exit hard
+    # before Python GC triggers it. ponytail: os._exit, revisit if cleanup ever
+    # needs to run on exit here.
+    os._exit(rc)

@@ -27,7 +27,7 @@ SFV_PRESENT = "present"
 SFV_SIZE_STABLE = "size_stable"
 SFV_CRC = "crc"
 
-DEFAULT_SETTLE = 5
+DEFAULT_SETTLE = 30
 
 
 class _State:
