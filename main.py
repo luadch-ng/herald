@@ -913,11 +913,18 @@ class Herald(QMainWindow):
             "(fastest, but a file could still be uploading)\n"
             "- wait until quiet: also wait until nothing in the folder changes "
             "for 'Quiet seconds' (recommended)\n"
-            "- CRC verify: also check every file's checksum against the SFV "
-            "(exact, but reads every byte - slow on big releases)\n"
+            "- CRC verify: also checksum every file against the SFV, so a scene "
+            "release is announced only once the SFV is 100% satisfied (exact, "
+            "but reads every byte - slow on big releases)\n"
             "A folder with NO .sfv always uses the 'Quiet seconds' period "
             "instead.")
         self.rule_fields["sfv_level"] = combo
+        self.rule_fields["checkdirssfv"].setToolTip(
+            "Only announce a directory release once an .sfv is present and every "
+            "file it lists exists. This is a presence gate, not a completeness "
+            "check - HOW sure Herald must be the files are finished is the 'SFV "
+            "accuracy' setting above (use 'CRC verify' to hold until the SFV "
+            "fully matches).")
         self.rule_fields["settle_seconds"].setToolTip(
             "How many seconds a folder must go WITHOUT any change (no new or "
             "modified files) before Herald treats the release as finished and "
