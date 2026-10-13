@@ -117,6 +117,17 @@ check("separator rule skipped by scan_rules despite active + real dir",
 check("default_rule separator defaults False",
       config.default_rule().get("separator") is False)
 
+# "Require valid SFV" must reject a 0-byte placeholder, not just any existing file
+r6 = tempfile.mkdtemp()
+with open(os.path.join(r6, "x.sfv"), "w") as _fh:
+    _fh.write("a.rar 00000000\n")
+mkfile(os.path.join(r6, "a.rar"), 0)     # listed file exists but is empty
+check("valid-sfv gate rejects a 0-byte listed file",
+      announce._directory_has_valid_sfv(r6) is False)
+mkfile(os.path.join(r6, "a.rar"), 100)   # now has content
+check("valid-sfv gate accepts a non-empty listed file",
+      announce._directory_has_valid_sfv(r6) is True)
+
 print()
 if _fail:
     print(f"{_fail} check(s) FAILED")

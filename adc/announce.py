@@ -88,8 +88,9 @@ def _directory_has_valid_sfv(path):
                             parts = line.rsplit(" ", 1)
                             if len(parts) == 2:
                                 fname = parts[0].strip()
-                                if not os.path.isfile(os.path.join(path, fname)):
-                                    return False
+                                p = os.path.join(path, fname)
+                                if not os.path.isfile(p) or os.path.getsize(p) == 0:
+                                    return False   # missing or 0-byte placeholder
             except OSError:
                 return False
             return True
