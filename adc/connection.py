@@ -289,7 +289,7 @@ class HubConnection:
         watched = 0
         seen = set()
         for rule in rules:
-            if not rule.get("active"):
+            if rule.get("separator") or not rule.get("active"):
                 continue
             path = rule.get("path", "")
             if path and path not in seen and os.path.isdir(path):

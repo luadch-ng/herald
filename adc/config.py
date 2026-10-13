@@ -33,6 +33,7 @@ def default_rule(rulename=""):
     return {
         "rulename": rulename,
         "active": False,
+        "separator": False,   # a non-rule visual divider in the GUI rule list
         "path": "",
         "command": "+addrel",
         "category": "",

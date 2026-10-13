@@ -106,6 +106,17 @@ mkfile(os.path.join(d4, "d.rar.tmp"), 100)   # only a temp file
 t4 = ReleaseTracker([mkrule(r4)], set())
 check("only-temp folder stays empty -> never ready", names(t4.poll(now=99)) == [])
 
+# separator rules are GUI-only dividers: scan_rules must never scan them, even
+# if one is (mis)marked active over a real folder that holds a release.
+from adc import announce
+r5 = tempfile.mkdtemp()
+os.makedirs(os.path.join(r5, "Rel.E-GRP"))
+_sep = dict(config.default_rule(), active=True, path=r5, separator=True)
+check("separator rule skipped by scan_rules despite active + real dir",
+      announce.scan_rules([_sep], set()) == [])
+check("default_rule separator defaults False",
+      config.default_rule().get("separator") is False)
+
 print()
 if _fail:
     print(f"{_fail} check(s) FAILED")
