@@ -19,7 +19,7 @@ from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QFileDialog, QFormLayout,
-    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
+    QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
     QMenu, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QSystemTrayIcon,
     QTabWidget, QToolButton, QVBoxLayout, QWidget,
 )
@@ -1143,6 +1143,17 @@ class Herald(QMainWindow):
         self.rule_list.clear()
         hub = self._hub
         for rule in (hub["rules"] if hub else []):
+            if rule.get("separator"):
+                # GUI-only divider: a non-selectable row carrying a full-width
+                # horizontal line (QFrame HLine fills + resizes with the list).
+                item = QListWidgetItem()
+                item.setFlags(Qt.ItemIsEnabled)
+                self.rule_list.addItem(item)
+                line = QFrame()
+                line.setFrameShape(QFrame.HLine)
+                line.setFrameShadow(QFrame.Sunken)
+                self.rule_list.setItemWidget(item, line)
+                continue
             mark = "*" if rule.get("active") else " "
             self.rule_list.addItem(QListWidgetItem(f"[{mark}] {rule['rulename'] or '(unnamed)'}"))
         count = self.rule_list.count()
@@ -1308,30 +1319,45 @@ class Herald(QMainWindow):
         config.save_hubs(self.hubs)
         self._reload_rule_list(select_row=row)
 
-    def _del_rule(self):
+    def _del_rule(self, row=None):
         hub = self._hub
-        if hub is None or not (0 <= self._rule_row < len(hub["rules"])):
+        row = self._rule_row if row is None else row
+        if hub is None or not (0 <= row < len(hub["rules"])):
             return
-        name = hub["rules"][self._rule_row].get("rulename") or "(unnamed)"
-        if not self._confirm("Delete rule", f"Delete rule '{name}'?"):
-            return
-        del hub["rules"][self._rule_row]
+        if hub["rules"][row].get("separator"):
+            if not self._confirm("Delete separator", "Delete this separator?"):
+                return
+        else:
+            name = hub["rules"][row].get("rulename") or "(unnamed)"
+            if not self._confirm("Delete rule", f"Delete rule '{name}'?"):
+                return
+        del hub["rules"][row]
         config.save_hubs(self.hubs)
         self._reload_rule_list()
 
-    def _move_rule(self, delta):
-        """Reorder the selected rule by one position (delta -1 up / +1 down), so
-        the operator can arrange rules in their own order. (Sopor)"""
+    def _add_separator(self, row):
+        """Insert a visual divider right after `row` in the rule list."""
+        hub = self._hub
+        if hub is None:
+            return
+        hub["rules"].insert(row + 1, dict(config.default_rule(), separator=True))
+        config.save_hubs(self.hubs)
+        self._reload_rule_list()
+
+    def _move_rule(self, delta, row=None):
+        """Reorder a rule (or separator) by one position (delta -1 up / +1 down),
+        so the operator can arrange rules in their own order. (Sopor)"""
         hub = self._hub
         if hub is None or self._rt(hub)["worker"] is not None:
             return                       # locked while this hub is connected
-        row = self._rule_row
+        row = self._rule_row if row is None else row
         new = row + delta
         if not (0 <= row < len(hub["rules"])) or not (0 <= new < len(hub["rules"])):
             return
-        # flush unsaved editor edits into the current row first (same as clone),
-        # so a move never loses what is in the editor
-        if self._loaded_hub is hub:
+        # flush unsaved editor edits only when the moved row is the loaded one
+        # (so a move never loses the editor, and moving a separator never writes
+        # the editor onto it)
+        if self._loaded_hub is hub and row == self._rule_row:
             self._save_editor_to(hub, row)
         hub["rules"][row], hub["rules"][new] = hub["rules"][new], hub["rules"][row]
         config.save_hubs(self.hubs)
@@ -1345,20 +1371,33 @@ class Herald(QMainWindow):
         if item is None:
             return
         row = self.rule_list.row(item)
-        if row != self._rule_row:
-            self.rule_list.setCurrentRow(row)   # select it (loads into editor)
+        is_sep = bool(hub["rules"][row].get("separator")) if 0 <= row < len(hub["rules"]) else False
         connected = self._rt(hub)["worker"] is not None
         last = len(hub["rules"]) - 1
         menu = QMenu(self.rule_list)
-        a_up = menu.addAction("Move up", lambda: self._move_rule(-1))
-        a_dn = menu.addAction("Move down", lambda: self._move_rule(1))
-        menu.addSeparator()
-        a_cl = menu.addAction("Clone", self._clone_rule)
-        a_del = menu.addAction("Delete", self._del_rule)
-        # order changes + clone/delete are edits -> locked while connected
+        if is_sep:
+            # a separator is non-selectable, so act on the clicked row explicitly
+            a_up = menu.addAction("Move up", lambda: self._move_rule(-1, row))
+            a_dn = menu.addAction("Move down", lambda: self._move_rule(1, row))
+            menu.addSeparator()
+            a_sep = menu.addAction("Add separator", lambda: self._add_separator(row))
+            a_del = menu.addAction("Delete", lambda: self._del_rule(row))
+            a_cl = None
+        else:
+            if row != self._rule_row:
+                self.rule_list.setCurrentRow(row)   # select it (loads into editor)
+            a_up = menu.addAction("Move up", lambda: self._move_rule(-1))
+            a_dn = menu.addAction("Move down", lambda: self._move_rule(1))
+            menu.addSeparator()
+            a_cl = menu.addAction("Clone", self._clone_rule)
+            a_sep = menu.addAction("Add separator", lambda: self._add_separator(row))
+            a_del = menu.addAction("Delete", self._del_rule)
+        # order changes + clone/delete/add are edits -> locked while connected
         a_up.setEnabled(not connected and row > 0)
         a_dn.setEnabled(not connected and row < last)
-        a_cl.setEnabled(not connected)
+        if a_cl is not None:
+            a_cl.setEnabled(not connected)
+        a_sep.setEnabled(not connected)
         a_del.setEnabled(not connected)
         menu.exec(self.rule_list.mapToGlobal(pos))
 

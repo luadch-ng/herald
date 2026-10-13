@@ -205,6 +205,8 @@ def scan_rules(rules, already_sent, log=lambda *_: None, warned_missing=None):
     blocked = {}
     log("Search directories for updates...")
     for rule in rules:
+        if rule.get("separator"):
+            continue   # GUI-only visual divider, never scanned
         if not rule.get("active"):
             continue
         path = str(rule.get("path", ""))
