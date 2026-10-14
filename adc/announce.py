@@ -18,6 +18,8 @@ A "rule" is a dict with these keys (see config.default_rule):
 import os
 import time
 
+from . import complete
+
 
 class Release:
     """One release found by the scanner: its name, matching rule, full path
@@ -72,29 +74,17 @@ def _directory_has_nfo(path):
 
 
 def _directory_has_valid_sfv(path):
-    """Port of directory_has_valid_sfv: find an .sfv, and verify every file
-    it lists exists in the directory."""
-    try:
-        entries = list(os.scandir(path))
-    except OSError:
-        return False
-    for entry in entries:
-        if entry.is_file() and entry.name.lower().endswith(".sfv"):
-            try:
-                with open(entry.path, "r", encoding="utf-8", errors="replace") as fh:
-                    for line in fh:
-                        line = line.rstrip("\r\n")
-                        if line and not line.startswith(";"):
-                            parts = line.rsplit(" ", 1)
-                            if len(parts) == 2:
-                                fname = parts[0].strip()
-                                p = os.path.join(path, fname)
-                                if not os.path.isfile(p) or os.path.getsize(p) == 0:
-                                    return False   # missing or 0-byte placeholder
-            except OSError:
-                return False
-            return True
-    return False
+    """"Require valid SFV" scan gate: a usable SFV exists in the release tree
+    AND every file it lists is present and non-empty.
+
+    Delegates to complete.sfv_status so the scan gate and the completion gate
+    share ONE SFV reader (same discovery, same any-whitespace split, same
+    path-entry rejection). A second, space-only parser here used to skip any
+    line it could not split on a literal space - so a tab-delimited SFV passed
+    the gate with NOTHING actually verified, letting a release announce before
+    its files had arrived (#3)."""
+    has_sfv, all_present, _ = complete.sfv_status(path)
+    return has_sfv and all_present
 
 
 def _count_files_by_ext(path, recursive, max_depth):

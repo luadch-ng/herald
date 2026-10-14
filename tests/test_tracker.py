@@ -128,6 +128,18 @@ mkfile(os.path.join(r6, "a.rar"), 100)   # now has content
 check("valid-sfv gate accepts a non-empty listed file",
       announce._directory_has_valid_sfv(r6) is True)
 
+# A tab-delimited SFV listing a MISSING file must NOT pass the gate. The old
+# space-only split silently skipped any line it could not split on a literal
+# space, so the gate passed with nothing verified -> early announce (#3).
+r7 = tempfile.mkdtemp()
+with open(os.path.join(r7, "y.sfv"), "w") as _fh:
+    _fh.write("missing.rar\tdeadbeef\n")   # tab between name and CRC
+check("valid-sfv gate rejects a tab-delimited SFV whose file is missing",
+      announce._directory_has_valid_sfv(r7) is False)
+mkfile(os.path.join(r7, "missing.rar"), 100)
+check("valid-sfv gate accepts once the tab-delimited listed file is present",
+      announce._directory_has_valid_sfv(r7) is True)
+
 print()
 if _fail:
     print(f"{_fail} check(s) FAILED")
