@@ -47,7 +47,7 @@ creates the first rule from what you typed).
 | Hub command | The command used to announce, e.g. `+addrel`. |
 | Category | The hub category the command expects, e.g. `Movies_1080p`. Import the hub's categories via `File -> Import freshstuff categories`. |
 | Quiet seconds | How long a release must be unchanged before it counts as finished. |
-| SFV accuracy | `present` (fastest) / `wait until quiet` (recommended) / `CRC verify` (exact, reads every byte - slow). |
+| SFV accuracy | How thorough the "finished" check is once every file the SFV lists is present: `Present` (all files exist, fastest) / `Complete` (also waits until the folder stops changing for `Quiet seconds`, recommended) / `Verified` (also checksums every file against the SFV; exact, reads every byte - slow). |
 | Scan previous daydir | Zeroday/daydir mode: for this many minutes after midnight, also scan yesterday's day folder so late-night releases are not orphaned. `0` = off. |
 | Filters | Announce directories / files, Require NFO / valid SFV, Skip hidden files, Disallow whitespace, Daydir scheme (MMDD), Only current daydir, Max age (days). |
 | Exclude (one per line) | Skip a release whose name contains **any** of these terms (e.g. `(nuked)`). |
