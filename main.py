@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QByteArray, QEvent, QThread, QTimer, QUrl, Signal
+from PySide6.QtCore import Qt, QByteArray, QEvent, QSize, QThread, QTimer, QUrl, Signal
 from PySide6.QtGui import (QColor, QDesktopServices, QIcon, QImage, QPainter)
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtUiTools import QUiLoader
@@ -50,7 +50,7 @@ _PALETTES = {
         "BTN_PRESSED": "#262a34", "SEL_BG": "#1d2029", "SEL_FG": "#ffffff",
         "HOVER_BG": "#191c24", "DIS_FG": "#6b7280", "DIS_BG": "#232734",
         "DIS_BORDER": "#363b49", "LOG_FG": "#a9b0bd", "SCROLL": "#2c313d",
-        "ACCENT": "#2563eb", "ACCENT_FG": "#ffffff",
+        "ACCENT": "#2563eb", "ACCENT_FG": "#ffffff", "SEP": "#565f6e",
     },
     "light": {
         "BG": "#f5f6f8", "FG": "#2a2e37", "PANEL": "#eceef2", "INPUT_BG": "#ffffff",
@@ -60,7 +60,7 @@ _PALETTES = {
         "BTN_PRESSED": "#cfd4dd", "SEL_BG": "#dbe3f4", "SEL_FG": "#14161c",
         "HOVER_BG": "#e7eaf1", "DIS_FG": "#a8adb8", "DIS_BG": "#e9ebef",
         "DIS_BORDER": "#d9dce3", "LOG_FG": "#4a4f5a", "SCROLL": "#c8ccd5",
-        "ACCENT": "#2563eb", "ACCENT_FG": "#ffffff",
+        "ACCENT": "#2563eb", "ACCENT_FG": "#ffffff", "SEP": "#a2a9b4",
     },
 }
 
@@ -1153,25 +1153,33 @@ class Herald(QMainWindow):
         hub = self._hub
         for rule in (hub["rules"] if hub else []):
             if rule.get("separator"):
-                # GUI-only divider: a non-selectable row carrying a full-width
-                # horizontal line (QFrame HLine fills + resizes with the list).
+                # GUI-only divider: a non-selectable row carrying a thin
+                # horizontal rule. The list item's own padding (9px top/bottom,
+                # 10px sides - see theme.qss QListWidget::item) gives the line
+                # its breathing space and side inset, so the row's sizeHint must
+                # be that vertical padding PLUS the line; a shorter row lets the
+                # padding collapse the embedded widget to zero height and nothing
+                # shows at all. Colour comes from theme.qss (__SEP__), adapting
+                # to the dark/light theme.
                 item = QListWidgetItem()
                 item.setFlags(Qt.ItemIsEnabled)
+                item.setSizeHint(QSize(0, 20))
                 self.rule_list.addItem(item)
                 line = QFrame()
-                line.setFrameShape(QFrame.HLine)
-                line.setFrameShadow(QFrame.Sunken)
+                line.setObjectName("ruleSeparator")
+                line.setFixedHeight(2)
                 self.rule_list.setItemWidget(item, line)
                 continue
             mark = "*" if rule.get("active") else " "
             self.rule_list.addItem(QListWidgetItem(f"[{mark}] {rule['rulename'] or '(unnamed)'}"))
         count = self.rule_list.count()
-        if count:
-            if not (0 <= select_row < count):
-                select_row = 0
+        if not (0 <= select_row < count):
+            select_row = 0
+        select_row = self._nonsep_row(select_row)   # never land on a divider
+        if count and select_row >= 0:
             self.rule_list.setCurrentRow(select_row)
         self.rule_list.blockSignals(False)
-        if count:
+        if count and select_row >= 0:
             self._load_rule(select_row)
         else:
             # No rules yet: show default_rule() values in the editor rather than
@@ -1180,6 +1188,22 @@ class Herald(QMainWindow):
             # another hub's rule. (review)
             self._rule_row = -1
             self._populate_rule_editor(config.default_rule())
+
+    def _nonsep_row(self, near):
+        """Nearest rule-list row that is a real rule (not a divider), searching
+        outward from `near`; -1 if the hub has no rules or only separators. The
+        current/loaded row must never be a divider - loading one blanks the
+        editor and the label sync would stamp text onto it."""
+        hub = self._hub
+        rules = hub["rules"] if hub else []
+        if not rules:
+            return -1
+        near = max(0, min(near, len(rules) - 1))
+        for off in range(len(rules)):
+            for i in (near + off, near - off):
+                if 0 <= i < len(rules) and not rules[i].get("separator"):
+                    return i
+        return -1
 
     def _mark_rule_dirty(self, *_):
         if not self._loading_rule:
@@ -1195,6 +1219,10 @@ class Herald(QMainWindow):
         row = self.rule_list.currentRow()
         if not (0 <= row < self.rule_list.count()):
             return
+        hub = self._hub
+        if (hub is not None and 0 <= row < len(hub["rules"])
+                and hub["rules"][row].get("separator")):
+            return   # never stamp a text label onto a divider row
         mark = "*" if self.rule_fields["active"].isChecked() else " "
         name = self.rule_fields["rulename"].text() or "(unnamed)"
         self.rule_list.item(row).setText(f"[{mark}] {name}")
@@ -1202,6 +1230,19 @@ class Herald(QMainWindow):
     def _on_rule_selected(self, row):
         """Rule row changed: offer to save unsaved edits on the rule we leave."""
         if row < 0:
+            return
+        hub = self._hub
+        # A separator is enabled (so its divider paints) but not selectable;
+        # clicking it still makes it the current row. Don't load it - that would
+        # blank the editor and, via the live name->label sync, stamp
+        # "[ ] (unnamed)" onto the divider. Bounce selection back to the rule
+        # being edited.
+        if (hub is not None and 0 <= row < len(hub["rules"])
+                and hub["rules"][row].get("separator")):
+            if 0 <= self._rule_row < self.rule_list.count():
+                self.rule_list.blockSignals(True)
+                self.rule_list.setCurrentRow(self._rule_row)
+                self.rule_list.blockSignals(False)
             return
         if (self._rule_dirty and self._loaded_hub is not None
                 and 0 <= self._rule_row < len(self._loaded_hub["rules"])
@@ -1218,6 +1259,8 @@ class Herald(QMainWindow):
         hub = self._hub
         if hub is None or not (0 <= row < len(hub["rules"])):
             return
+        if hub["rules"][row].get("separator"):
+            return   # a divider is not a rule: never load it into the editor
         self._rule_row = row
         self._populate_rule_editor(hub["rules"][row])
 

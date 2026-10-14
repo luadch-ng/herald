@@ -55,6 +55,9 @@ QListWidget::item:hover {
     background-color: __HOVER_BG__;
 }
 
+/* Rule-list divider row (GUI-only separator): a hairline in a theme colour. */
+QFrame#ruleSeparator { background-color: __SEP__; border: none; }
+
 /* The release log renders each row as its own widget (label + folder button)
    via setItemWidget; the default ::item vertical padding insets that widget and
    clipped it to a few pixels (only half the row + a cut-off folder button
