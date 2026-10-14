@@ -140,6 +140,21 @@ mkfile(os.path.join(r7, "missing.rar"), 100)
 check("valid-sfv gate accepts once the tab-delimited listed file is present",
       announce._directory_has_valid_sfv(r7) is True)
 
+# A NUL byte can never match a real filename, so a NUL-bearing SFV entry is
+# useless; the parser must drop it so it neither sits permanently "missing"
+# (blocking the whole SFV from completing) nor reaches an os.stat/open call
+# (an embedded NUL raises ValueError, which the callers' `except OSError`
+# would not catch). (#3 hardening)
+r8 = tempfile.mkdtemp()
+with open(os.path.join(r8, "z.sfv"), "w") as _fh:
+    _fh.write("bad\x00name.rar deadbeef\n")
+check("parse_sfv drops a NUL-byte name",
+      complete.parse_sfv(os.path.join(r8, "z.sfv")) == [])
+# the sole entry dropped -> no usable SFV remains (not a half-parsed one that
+# would block the release forever)
+check("NUL-only SFV yields no usable SFV",
+      complete.sfv_status(r8)[0] is False)
+
 print()
 if _fail:
     print(f"{_fail} check(s) FAILED")

@@ -123,10 +123,16 @@ def parse_sfv(path):
                 if len(parts) != 2:
                     continue
                 name, crc = parts[0].strip(), parts[1].strip().lower()
-                # reject a path-bearing entry: an SFV lists plain filenames in
-                # its own directory; a `../secret` would turn the CRC check into
-                # an arbitrary-file read oracle.
-                if "/" in name or "\\" in name or name in ("..", "."):
+                # reject a path-bearing or NUL-bearing entry: an SFV lists plain
+                # filenames in its own directory. A `../secret` would turn the
+                # presence/CRC check into an arbitrary-file read oracle. A NUL
+                # byte can never match a real filename (Windows and Linux both
+                # forbid it), so a kept NUL entry would sit permanently "missing"
+                # and block its whole SFV from ever completing; dropping it also
+                # keeps it away from os.stat / open, where an embedded NUL raises
+                # ValueError (not an OSError, so the callers' `except OSError`
+                # would not catch it).
+                if "/" in name or "\\" in name or "\x00" in name or name in ("..", "."):
                     continue
                 if len(crc) == 8 and all(c in "0123456789abcdef" for c in crc):
                     entries.append((name, crc))
