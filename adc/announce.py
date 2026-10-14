@@ -74,8 +74,8 @@ def _directory_has_nfo(path):
 
 
 def _directory_has_valid_sfv(path):
-    """"Require valid SFV" scan gate: a usable SFV exists in the release tree
-    AND every file it lists is present and non-empty.
+    """Scan gate for the "Require valid SFV" rule option: a usable SFV exists
+    in the release tree AND every file it lists is present and non-empty.
 
     Delegates to complete.sfv_status so the scan gate and the completion gate
     share ONE SFV reader (same discovery, same any-whitespace split, same
