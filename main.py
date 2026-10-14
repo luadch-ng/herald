@@ -902,29 +902,31 @@ class Herald(QMainWindow):
         }
         combo = f(QComboBox, "cfgSfvLevel")
         combo.clear()
-        for label, val in (("present (fastest)", "present"),
-                           ("wait until quiet (recommended)", "size_stable"),
-                           ("CRC verify (slow, exact)", "crc")):
+        for label, val in (("Present: all SFV files exist (fastest)", "present"),
+                           ("Complete: files exist + folder stopped changing (recommended)", "size_stable"),
+                           ("Verified: files exist + CRC match (exact, slow)", "crc")):
             combo.addItem(label, val)
         combo.setToolTip(
             "For a folder that HAS an .sfv, how sure Herald must be it is "
-            "finished before announcing:\n"
-            "- present: announce as soon as every file the SFV lists exists "
-            "(fastest, but a file could still be uploading)\n"
-            "- wait until quiet: also wait until nothing in the folder changes "
-            "for 'Quiet seconds' (recommended)\n"
-            "- CRC verify: also checksum every file against the SFV, so a scene "
+            "finished before announcing. All three first require every file the "
+            "SFV lists to exist; they differ in what else is checked:\n"
+            "- Present: announce as soon as all listed files exist (fastest, but "
+            "the last file could still be uploading)\n"
+            "- Complete: also wait until nothing in the folder changes for "
+            "'Quiet seconds', so a file still being written is not announced "
+            "early (recommended)\n"
+            "- Verified: also checksum every file against the SFV, so the "
             "release is announced only once the SFV is 100% satisfied (exact, "
             "but reads every byte - slow on big releases)\n"
             "A folder with NO .sfv always uses the 'Quiet seconds' period "
             "instead.")
         self.rule_fields["sfv_level"] = combo
         self.rule_fields["checkdirssfv"].setToolTip(
-            "Only announce a directory release once an .sfv is present and every "
-            "file it lists exists. This is a presence gate, not a completeness "
-            "check - HOW sure Herald must be the files are finished is the 'SFV "
-            "accuracy' setting above (use 'CRC verify' to hold until the SFV "
-            "fully matches).")
+            "Only announce a directory release once every .sfv in it (including "
+            "per-disc subfolders) is present and all the files it lists exist. "
+            "This is a presence gate, not a completeness check - HOW sure Herald "
+            "must be the files are finished is the 'SFV accuracy' setting above "
+            "(use 'Verified' to hold until the SFV fully matches).")
         self.rule_fields["settle_seconds"].setToolTip(
             "How many seconds a folder must go WITHOUT any change (no new or "
             "modified files) before Herald treats the release as finished and "
