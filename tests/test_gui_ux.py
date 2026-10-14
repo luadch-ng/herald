@@ -220,6 +220,29 @@ def test_changeevent_restore_from_minimize_schedules_reapply():
     check("changeEvent restore-from-minimize schedules reapply", called == [True])
 
 
+def test_clicking_separator_does_not_load_or_stamp_it():
+    """Clicking a separator row must not treat it as a rule. A divider is
+    enabled (so it paints) but not selectable, yet a click still makes it the
+    current row - which used to load it into the editor (blanking it) and, via
+    the live name->label sync, stamp '[ ] (unnamed)' onto the divider. The
+    selection must bounce back to the rule being edited. (display bug)"""
+    _app()
+    hub = config.default_hub("H")
+    hub["rules"] = [dict(config.default_rule(), rulename="A", path="/a", active=True),
+                    dict(config.default_rule(), separator=True),
+                    dict(config.default_rule(), rulename="B", path="/b")]
+    w = _build(hubs=[hub])
+    w.rule_list.setCurrentRow(0)
+    check("precondition: editor shows rule A", w.rule_fields["rulename"].text() == "A")
+    w.rule_list.setCurrentRow(1)      # click the separator (fires currentRowChanged)
+    sep = w.rule_list.item(1)
+    check("separator keeps an empty label (no stamped text)", sep.text() == "")
+    check("separator keeps its divider widget", w.rule_list.itemWidget(sep) is not None)
+    check("clicking the separator does not blank the editor",
+          w.rule_fields["rulename"].text() == "A")
+    check("selection bounces back to the real rule", w.rule_list.currentRow() == 0)
+
+
 def main_():
     test_release_tooltip_toggle()
     test_autoconnect_startup_and_field()
@@ -229,6 +252,7 @@ def main_():
     test_empty_hub_editor_shows_defaults_not_stale()
     test_reapply_autoscroll_on_restore()
     test_changeevent_restore_from_minimize_schedules_reapply()
+    test_clicking_separator_does_not_load_or_stamp_it()
     print()
     if FAILED:
         print(f"{len(FAILED)} check(s) failed")
