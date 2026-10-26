@@ -173,6 +173,35 @@ def _sfv_crc_ok(sfv_dir, entries):
     return True
 
 
+def diagnose(root):
+    """Human-readable dump of what the SFV gate sees in `root`, for debug-
+    logging a (mis)announce: each discovered SFV and whether its listed files
+    are present + their current size (0-byte counts as missing), plus every
+    non-temp non-empty file actually in the tree. Diagnostic only - callers
+    wrap it so a failure here can never break announcing."""
+    lines = []
+    sfvs = find_sfvs(root)
+    lines.append(f"{len(sfvs)} sfv found"
+                 if sfvs else "no .sfv found (depth 3, excl Sample/Proof/Subs/Cover)")
+    for sfv in sfvs:
+        entries = parse_sfv(sfv)
+        d = os.path.dirname(sfv)
+        lines.append(f"sfv {os.path.relpath(sfv, root)}: {len(entries)} usable entries")
+        for name, _ in entries:
+            p = os.path.join(d, name)
+            try:
+                sz = os.path.getsize(p) if os.path.isfile(p) else None
+            except OSError:
+                sz = None
+            tag = "present" if sz else "MISSING"   # 0-byte counts as missing
+            lines.append(f"  {tag} {name}" + (f" {sz} B" if sz is not None else ""))
+    files = sorted(_walk_files(root, 8), key=lambda t: t[0])
+    lines.append(f"tree: {len(files)} non-temp non-empty files")
+    for path, sz, _ in files:
+        lines.append(f"  {os.path.relpath(path, root)} {sz} B")
+    return lines
+
+
 def sfv_status(root):
     """Inspect the release's SFV(s). Returns:
         (has_sfv, all_present, verify_crc_fn)

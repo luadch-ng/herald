@@ -29,6 +29,12 @@ SFV_CRC = "crc"
 
 DEFAULT_SETTLE = 30
 
+# ponytail: verbose per-announce SFV dump for the #3 field diagnosis (a build
+# handed to a reporter whose releases announce early only *sometimes*). It fires
+# once per announced release and is wrapped so it can never break announcing.
+# Gate behind a setting or remove before the dev->master release merge.
+ANNOUNCE_DEBUG = True
+
 
 class _State:
     __slots__ = ("snapshot", "changed_at", "announced", "writing_logged")
@@ -74,6 +80,8 @@ class ReleaseTracker:
             if self._is_complete(cand, st, now):
                 st.announced = True
                 ready.append(cand)
+                if ANNOUNCE_DEBUG:
+                    self._debug_announce(cand, st, now)
         # Free per-release state once it is no longer needed: either the release
         # has been announced AND recorded in `already` (so scan_rules filters it
         # out of every future poll - keeping its _State would leak one entry per
@@ -85,6 +93,26 @@ class ReleaseTracker:
             if name in self.already or (name not in present and not self._state[name].announced):
                 del self._state[name]
         return ready
+
+    def _debug_announce(self, cand, st, now):
+        """Log the full basis for an announce decision (#3 diagnosis). Wrapped
+        so a diagnostic error can never stop a release being announced."""
+        try:
+            r = cand.rule
+            self.log(f"[sfv-debug] ANNOUNCE {cand.name}")
+            self.log(f"[sfv-debug]   is_dir={cand.is_dir} "
+                     f"checkdirs={r.get('checkdirs')} "
+                     f"checkdirssfv={r.get('checkdirssfv')} "
+                     f"sfv_level={r.get('sfv_level', SFV_SIZE_STABLE)} "
+                     f"settle={int(r.get('settle_seconds', DEFAULT_SETTLE))}s "
+                     f"quiet_for={now - st.changed_at:.0f}s snapshot={st.snapshot}")
+            if cand.is_dir:
+                has_sfv, all_present, _ = complete.sfv_status(cand.path)
+                self.log(f"[sfv-debug]   has_sfv={has_sfv} all_present={all_present}")
+                for ln in complete.diagnose(cand.path):
+                    self.log(f"[sfv-debug]   {ln}")
+        except Exception as e:   # diagnostics must never break announcing
+            self.log(f"[sfv-debug] (diagnostic failed: {e})")
 
     def _is_complete(self, cand, st, now):
         settle = int(cand.rule.get("settle_seconds", DEFAULT_SETTLE))
