@@ -3,7 +3,7 @@
 # Single source of the Herald version: the GUI About box (main.APP_VERSION),
 # the ADC client VE field announced to the hub (connection.py), and the release
 # zip names (packaging/build_release.py) all read this.
-__version__ = "1.0.1-dev"
+__version__ = "1.0.1-dev2"
 
 from .base32 import from_base32, to_base32
 from .hashes import cid_from_pid, hash_pas

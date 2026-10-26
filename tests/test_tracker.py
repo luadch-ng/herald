@@ -155,6 +155,17 @@ check("parse_sfv drops a NUL-byte name",
 check("NUL-only SFV yields no usable SFV",
       complete.sfv_status(r8)[0] is False)
 
+# diagnose() (dev debug aid for #3): lists present + missing SFV files and the
+# real tree contents, and never raises.
+r9 = tempfile.mkdtemp()
+with open(os.path.join(r9, "d.sfv"), "w") as _fh:
+    _fh.write("there.rar aaaaaaaa\ngone.rar bbbbbbbb\n")
+mkfile(os.path.join(r9, "there.rar"), 123)
+_diag = "\n".join(complete.diagnose(r9))
+check("diagnose lists a present SFV file with its size", "present there.rar 123 B" in _diag)
+check("diagnose flags a missing SFV file", "MISSING gone.rar" in _diag)
+check("diagnose lists the real tree files", "tree: 2 non-temp non-empty files" in _diag)
+
 print()
 if _fail:
     print(f"{_fail} check(s) FAILED")
